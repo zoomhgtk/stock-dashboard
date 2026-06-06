@@ -117,7 +117,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-lg font-semibold text-[#1d1d1f]">A股 Stock Dashboard</h1>
             <p className="text-xs text-[#86868b] mt-0.5">
-              故事收盘报告 · 实时行情 · 预警监测
+              股市收盘报告 · 实时行情 · 预警监测
             </p>
           </div>
           <div className="flex items-center gap-3">

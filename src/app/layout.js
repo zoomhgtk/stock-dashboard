@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "A股 Stock Dashboard",
-  description: "个人持仓看板 · K线 · 预警 · 故事收盘报告",
+  description: "个人持仓看板 · K线 · 预警 · 股市收盘报告",
 };
 
 export default function RootLayout({ children }) {

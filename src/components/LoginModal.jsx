@@ -103,6 +103,15 @@ export default function LoginModal({ onLogin }) {
                   type="text"
                   maxLength={1}
                   value={code[i] || ''}
+                  onPaste={e => {
+                    const pasted = (e.clipboardData?.getData('text') || '').replace(/\D/g, '');
+                    if (pasted.length === 6) {
+                      e.preventDefault();
+                      setCode(pasted);
+                      const last = document.getElementById('otp-5');
+                      if (last) last.focus();
+                    }
+                  }}
                   onChange={e => {
                     const val = e.target.value.replace(/\D/g, '');
                     if (val) {

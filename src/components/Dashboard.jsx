@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import LoginModal from '@/components/LoginModal';
 import AlertSidebar from '@/components/AlertSidebar';
 import PortfolioVisualization from '@/components/PortfolioVisualization';
@@ -36,6 +36,12 @@ export default function Dashboard() {
   const [authenticated, setAuthenticated] = useState(false);
   const [selectedCode, setSelectedCode] = useState('600036');
   const [selectedName, setSelectedName] = useState('招商银行');
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [portfolioCollapsed, setPortfolioCollapsed] = useState(false);
+  const [showAmounts, setShowAmounts] = useState(true);
+  const centerScrollRef = useRef(null);
+  const chartRef = useRef(null);
+  const portfolioRef = useRef(null);
 
   // On mount, check if we have a valid session cookie
   useEffect(() => {
@@ -53,6 +59,22 @@ export default function Dashboard() {
     })();
   }, []);
 
+  const scrollChartIntoView = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      chartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, []);
+
+  const handleCenterScroll = useCallback(() => {
+    const container = centerScrollRef.current;
+    const threshold = Math.max((portfolioRef.current?.offsetHeight || 0) - 24, 120);
+    setShowBackToTop((container?.scrollTop || 0) > threshold);
+  }, []);
+
+  const handleBackToTop = useCallback(() => {
+    centerScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const handleLogin = useCallback((token, user) => {
     console.log('Login:', user);
     setAuthenticated(true);
@@ -62,16 +84,18 @@ export default function Dashboard() {
     if (code && name) {
       setSelectedCode(code);
       setSelectedName(name);
+      scrollChartIntoView();
     }
-  }, []);
+  }, [scrollChartIntoView]);
 
   const handleSelectStockByName = useCallback((name) => {
     const stock = STOCK_MAP[name];
     if (stock) {
       setSelectedCode(stock.code);
       setSelectedName(name);
+      scrollChartIntoView();
     }
-  }, []);
+  }, [scrollChartIntoView]);
 
   // While checking session, show nothing (prevents flash of login screen)
   if (loading) return null;
@@ -113,14 +137,37 @@ export default function Dashboard() {
         {/* Two-column layout: Chart + Stock list */}
         <div className="flex-1 flex gap-4 min-h-0">
           {/* Chart area */}
-          <div className="flex-1 overflow-y-auto">
+          <div
+            ref={centerScrollRef}
+            onScroll={handleCenterScroll}
+            className="relative flex-1 overflow-y-auto scroll-smooth pr-1"
+          >
             <div className="flex min-w-0 flex-col gap-4">
-              <PortfolioVisualization />
-              <StockChart
-                stockCode={selectedCode}
-                stockName={selectedName}
-                market={STOCK_MAP[selectedName]?.market || 1}
-              />
+              <div ref={portfolioRef}>
+                <PortfolioVisualization
+                  collapsed={portfolioCollapsed}
+                  onToggleCollapsed={() => setPortfolioCollapsed(value => !value)}
+                  showAmounts={showAmounts}
+                  onToggleAmounts={() => setShowAmounts(value => !value)}
+                />
+              </div>
+              <div ref={chartRef} className="relative scroll-mt-2">
+                <StockChart
+                  stockCode={selectedCode}
+                  stockName={selectedName}
+                  market={STOCK_MAP[selectedName]?.market || 1}
+                />
+                <button
+                  type="button"
+                  onClick={handleBackToTop}
+                  className={`absolute bottom-6 right-6 z-30 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-[#007aff] shadow-[0_12px_30px_rgba(0,0,0,0.16)] ring-1 ring-black/[0.06] backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-white ${
+                    showBackToTop ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
+                  }`}
+                  aria-label="回到顶部"
+                >
+                  ↑ 回到顶部
+                </button>
+              </div>
             </div>
           </div>
 

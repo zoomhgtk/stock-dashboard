@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import LoginModal from '@/components/LoginModal';
 import AlertSidebar from '@/components/AlertSidebar';
+import PortfolioVisualization from '@/components/PortfolioVisualization';
 import StockChart from '@/components/StockChart';
 import StockList from '@/components/StockList';
 
@@ -113,11 +114,14 @@ export default function Dashboard() {
         <div className="flex-1 flex gap-4 min-h-0">
           {/* Chart area */}
           <div className="flex-1 overflow-y-auto">
-            <StockChart
-              stockCode={selectedCode}
-              stockName={selectedName}
-              market={STOCK_MAP[selectedName]?.market || 1}
-            />
+            <div className="flex min-w-0 flex-col gap-4">
+              <PortfolioVisualization />
+              <StockChart
+                stockCode={selectedCode}
+                stockName={selectedName}
+                market={STOCK_MAP[selectedName]?.market || 1}
+              />
+            </div>
           </div>
 
           {/* Right: stock list */}

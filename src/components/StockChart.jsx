@@ -17,29 +17,23 @@ export default function StockChart({ stockCode, stockName, market = 1 }) {
     if (!stockCode) return;
     setLoading(true);
     try {
-      const prefix = market === 1 ? 'sh' : 'sz';
-      const url = `https://quotes.sina.cn/cn/api/json_v2.php/CN_MarketData.getKLineData?symbol=${prefix}${stockCode}`;
+      const res = await fetch(`/api/kline?code=${stockCode}&market=${market}&range=${range}`);
+      const data = await res.json();
 
-      const scaleMap = { '1D': '5', '1W': '60', '1M': '240', '3M': '240', '1Y': '240', '5Y': '240' };
-      const scale = scaleMap[range] || '240';
-      const lenMap = { '1D': 100, '1W': 120, '1M': 60, '3M': 120, '1Y': 250, '5Y': 1200 };
-      const len = lenMap[range] || 60;
+      if (!data.kline || data.kline.length === 0) {
+        throw new Error('No data');
+      }
 
-      const res = await fetch(`${url}&scale=${scale}&ma=no&datalen=${len}`);
-      const text = await res.text();
-      const jsonStr = text.replace(/^.*?\(/, '').replace(/\);?$/, '');
-      const data = JSON.parse(jsonStr);
-
-      const klineData = data.map(d => ({
-        time: Math.floor(new Date(d.date || d.day).getTime() / 1000),
+      const klineData = data.kline.map(d => ({
+        time: d.time,
         open: d.open,
         high: d.high,
         low: d.low,
         close: d.close,
       }));
 
-      const volumeData = data.map(d => ({
-        time: Math.floor(new Date(d.date || d.day).getTime() / 1000),
+      const volumeData = data.kline.map(d => ({
+        time: d.time,
         value: d.volume,
         color: d.close >= d.open ? 'rgba(229,57,53,0.3)' : 'rgba(67,160,71,0.3)',
       }));

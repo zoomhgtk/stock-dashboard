@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(request) {
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
 
-  // Rate limit: max 3 OTP requests per 15 minutes per IP
-  const limit = checkRateLimit(ip, 'request-otp', 3, 15 * 60 * 1000);
+  // Rate limit: max 100 OTP requests per 15 minutes per IP
+  const limit = checkRateLimit(ip, 'request-otp', 100, 15 * 60 * 1000);
   if (!limit.allowed) {
     return Response.json({
       success: false,

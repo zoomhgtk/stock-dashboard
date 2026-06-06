@@ -67,7 +67,7 @@ export default function StockChart({ stockCode, stockName, market = 1 }) {
   useEffect(() => {
     if (!chartRef.current) return;
 
-    import('lightweight-charts').then(({ createChart }) => {
+    import('lightweight-charts').then(({ createChart, CandlestickSeries, HistogramSeries, CrosshairMode }) => {
       if (chartApiRef.current) {
         chartApiRef.current.remove();
       }
@@ -84,7 +84,7 @@ export default function StockChart({ stockCode, stockName, market = 1 }) {
           horzLines: { color: '#f0f0f0' },
         },
         crosshair: {
-          mode: 0,
+          mode: CrosshairMode.Normal,
           vertLine: { color: '#c7c7cc', width: 1, style: 3 },
           horzLine: { color: '#c7c7cc', width: 1, style: 3 },
         },
@@ -102,7 +102,7 @@ export default function StockChart({ stockCode, stockName, market = 1 }) {
       });
 
       // Candlestick series - RED up, GREEN down (A-share convention)
-      const candlestickSeries = chart.addCandlestickSeries({
+      const candlestickSeries = chart.addSeries(CandlestickSeries, {
         upColor: '#e53935',
         downColor: '#43a047',
         borderUpColor: '#e53935',
@@ -113,7 +113,7 @@ export default function StockChart({ stockCode, stockName, market = 1 }) {
       });
 
       // Volume series
-      const volumeSeries = chart.addHistogramSeries({
+      const volumeSeries = chart.addSeries(HistogramSeries, {
         priceFormat: { type: 'volume' },
         priceScaleId: 'volume',
         scaleMargins: { top: 0.8, bottom: 0 },

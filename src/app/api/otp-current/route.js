@@ -1,4 +1,4 @@
-import { createOTP } from '@/lib/store';
+import { createOTP, getLatestOTP } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,9 +14,14 @@ export async function GET(request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Generate a fresh OTP when called
-  const otp = createOTP();
-  console.log(`[OTP-AI] Generated: ${otp.code}`);
+  // Return the existing valid OTP if one exists; only create a new one when needed.
+  let otp = getLatestOTP();
+  if (otp) {
+    console.log(`[OTP-AI] Reusing existing OTP: ${otp.code}`);
+  } else {
+    otp = createOTP();
+    console.log(`[OTP-AI] Generated: ${otp.code}`);
+  }
 
   return Response.json({
     success: true,

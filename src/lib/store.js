@@ -4,7 +4,7 @@ const otpStore = new Map();
 export function createOTP() {
   const code = Math.floor(100000 + Math.random() * 900000).toString();
   const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
-  const otp = { code, expiresAt, used: false };
+  const otp = { code, expiresAt, used: false, _createdAt: Date.now() };
   otpStore.set(code, otp);
   // Clean up expired OTPs
   for (const [key, val] of otpStore) {
@@ -31,7 +31,7 @@ export function getLatestOTP() {
   let latest = null;
   let latestTime = 0;
   for (const [, entry] of otpStore) {
-    // entry._createdAt is set by createOTP via a hidden property
+    // entry._createdAt is set by createOTP
     if (entry._createdAt && entry._createdAt > latestTime && !entry.used && Date.now() < entry.expiresAt) {
       latest = entry;
       latestTime = entry._createdAt;
@@ -40,10 +40,6 @@ export function getLatestOTP() {
   return latest;
 }
 
-// Patch createOTP to track creation time
-const origCreate = createOTP;
 export function createOTPWithTimestamp() {
-  const otp = origCreate();
-  otp._createdAt = Date.now();
-  return otp;
+  return createOTP();
 }

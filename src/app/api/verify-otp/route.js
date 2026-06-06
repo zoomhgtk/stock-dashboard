@@ -1,5 +1,6 @@
 import { verifyOTP } from '@/lib/store';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createSession } from '@/lib/session-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,13 +29,22 @@ export async function POST(request) {
   }
 
   if (verifyOTP(code)) {
-    // Generate a simple session token
-    const sessionId = Buffer.from(`session:${Date.now()}:${Math.random().toString(36).slice(2)}`).toString('base64');
-    return Response.json({
+    // Create persistent session (72h)
+    const session = createSession(ip);
+
+    // Set session cookie
+    const response = Response.json({
       success: true,
-      token: sessionId,
+      token: session.token,
       user: { name: 'Harry' },
     });
+
+    response.headers.set(
+      'Set-Cookie',
+      `session_token=${session.token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${72 * 3600}`
+    );
+
+    return response;
   }
 
   return Response.json({

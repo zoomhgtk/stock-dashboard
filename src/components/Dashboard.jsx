@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import LoginModal from '@/components/LoginModal';
 import AlertSidebar from '@/components/AlertSidebar';
 import StockChart from '@/components/StockChart';
@@ -31,9 +31,26 @@ const STOCK_MAP = {
 };
 
 export default function Dashboard() {
+  const [loading, setLoading] = useState(true); // checking session
   const [authenticated, setAuthenticated] = useState(false);
   const [selectedCode, setSelectedCode] = useState('600036');
   const [selectedName, setSelectedName] = useState('招商银行');
+
+  // On mount, check if we have a valid session cookie
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/verify-session');
+        const data = await res.json();
+        if (data.valid) {
+          setAuthenticated(true);
+        }
+      } catch {
+        // Network error — show login
+      }
+      setLoading(false);
+    })();
+  }, []);
 
   const handleLogin = useCallback((token, user) => {
     console.log('Login:', user);
@@ -54,6 +71,9 @@ export default function Dashboard() {
       setSelectedName(name);
     }
   }, []);
+
+  // While checking session, show nothing (prevents flash of login screen)
+  if (loading) return null;
 
   if (!authenticated) {
     return <LoginModal onLogin={handleLogin} />;

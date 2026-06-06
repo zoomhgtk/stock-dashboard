@@ -94,7 +94,7 @@ export default function LoginModal({ onLogin }) {
         {step === 'sent' && (
           <div>
             <p className="text-xs text-[#86868b] text-center mb-4">
-              验证码已通过飞书发送，请在飞书中查看后输入
+              点击后告知 AI 助理「已点击获取验证码」，助理会通过飞书对话将验证码发给你
             </p>
             <div className="flex gap-2 mb-4">
               {[0, 1, 2, 3, 4, 5].map(i => (

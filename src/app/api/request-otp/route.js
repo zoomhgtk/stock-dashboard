@@ -1,8 +1,29 @@
 import { createOTP } from '@/lib/store';
+import { checkRateLimit } from '@/lib/rate-limit';
 
-export async function POST() {
-  const code = createOTP();
-  // The OTP is logged and will be sent via Feishu when the user asks
-  console.log('[OTP] Generated:', code);
-  return Response.json({ success: true, message: 'OTP sent to your Feishu' });
+export const dynamic = 'force-dynamic';
+
+export async function POST(request) {
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+
+  // Rate limit: max 3 OTP requests per 15 minutes per IP
+  const limit = checkRateLimit(ip, 'request-otp', 3, 15 * 60 * 1000);
+  if (!limit.allowed) {
+    return Response.json({
+      success: false,
+      error: `请求过于频繁，请在 ${Math.ceil(limit.retryAfter / 60)} 分钟后重试`,
+    }, { status: 429 });
+  }
+
+  const otp = createOTP();
+  const isDev = process.env.NODE_ENV === 'development';
+
+  console.log(`[OTP] Generated for ${ip}: ${otp.code}`);
+
+  return Response.json({
+    success: true,
+    message: 'OTP sent to your Feishu — 请查看飞书消息',
+    // In dev mode, return the code for testing
+    ...(isDev ? { code: otp.code } : {}),
+  });
 }

@@ -306,7 +306,7 @@ export default function PortfolioVisualization({ collapsed = false, onToggleColl
         </div>
         <div className="flex items-center gap-2">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#f5f5f7] px-3 py-1 text-xs font-medium text-[#86868b]">
-            <span>基准资金 {TOTAL_CAPITAL_WAN}万</span>
+            <span>基准资金 {showAmounts ? `${TOTAL_CAPITAL_WAN}万` : '***'}</span>
             <button
               type="button"
               onClick={() => setShowAmounts(value => !value)}

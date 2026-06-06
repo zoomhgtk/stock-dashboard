@@ -66,9 +66,15 @@ export async function POST(request) {
 
   console.log(`[OTP] Generated for ${ip}: ${otp.code}`);
 
-  void writeOtpToFeishuQueue(otp, ip).catch((error) => {
+  // Await Feishu queue write with timeout to keep function alive on Vercel serverless
+  try {
+    await Promise.race([
+      writeOtpToFeishuQueue(otp, ip),
+      new Promise(resolve => setTimeout(resolve, 5000)), // 5s timeout
+    ]);
+  } catch (error) {
     console.error('[OTP] Failed to write Feishu queue record:', error);
-  });
+  }
 
   return Response.json({
     success: true,

@@ -85,6 +85,7 @@ function OverviewCard({ label, value, subValue, accent = '#007aff', children, ma
 }
 
 function PieChart() {
+  const [tooltip, setTooltip] = useState(null);
   let currentAngle = 0;
   const slices = positions.map(item => {
     const startAngle = currentAngle;
@@ -95,6 +96,15 @@ function PieChart() {
 
     return { ...item, startAngle, endAngle, labelPoint };
   });
+
+  const handleSliceMouseMove = (event, slice) => {
+    const wrapperRect = event.currentTarget.ownerSVGElement.parentElement.getBoundingClientRect();
+    setTooltip({
+      slice,
+      x: event.clientX - wrapperRect.left + 14,
+      y: event.clientY - wrapperRect.top + 14,
+    });
+  };
 
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/[0.04]">
@@ -109,7 +119,7 @@ function PieChart() {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col items-center">
+      <div className="relative mt-4 flex flex-col items-center">
         <svg viewBox="0 0 220 220" className="h-56 w-56 max-w-full" role="img" aria-label="持仓占比饼图">
           {slices.map(slice => (
             <g key={slice.name}>
@@ -118,13 +128,16 @@ function PieChart() {
                 fill={slice.color}
                 stroke="#ffffff"
                 strokeWidth="3"
+                className="cursor-pointer transition-opacity hover:opacity-90"
+                onMouseMove={event => handleSliceMouseMove(event, slice)}
+                onMouseLeave={() => setTooltip(null)}
               />
               <text
                 x={slice.labelPoint.x}
                 y={slice.labelPoint.y}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="fill-white text-[11px] font-semibold"
+                className="pointer-events-none fill-white text-[11px] font-semibold"
                 style={{ fill: slice.name === '现金' ? '#86868b' : '#ffffff' }}
               >
                 {formatPct(slice.value)}
@@ -135,6 +148,21 @@ function PieChart() {
           <text x="110" y="104" textAnchor="middle" className="fill-[#86868b] text-[12px] font-medium">总仓位</text>
           <text x="110" y="126" textAnchor="middle" className="fill-[#1d1d1f] text-[24px] font-semibold">{formatPct(TOTAL_POSITION)}</text>
         </svg>
+
+        {tooltip && (
+          <div
+            className="pointer-events-none absolute z-10 min-w-32 rounded-2xl bg-white/95 px-3 py-2 text-xs shadow-[0_10px_30px_rgba(0,0,0,0.14)] ring-1 ring-black/[0.04] backdrop-blur"
+            style={{ left: tooltip.x, top: tooltip.y }}
+          >
+            <div className="font-semibold text-[#1d1d1f]">{tooltip.slice.name}</div>
+            <div className="mt-1 text-[#86868b]">{formatPct(tooltip.slice.value)}</div>
+            {tooltip.slice.trackedPct && (
+              <div className="mt-0.5 font-medium text-[#007aff]">
+                已持仓 {formatPct(tooltip.slice.trackedPct)}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mt-3 grid w-full grid-cols-2 gap-2 text-xs">
           {positions.map(item => (
@@ -204,21 +232,19 @@ function SectorDistribution() {
             const exceeded = sector.value > sector.limit;
             return (
               <div key={sector.name}>
-                <div className="mb-1 flex items-center justify-between text-xs">
+                <div className="mb-1 flex items-center text-xs">
                   <span className="font-medium text-[#1d1d1f]">
                     {sector.name}{exceeded ? ' 🚨' : ''}
                   </span>
-                  <span className={exceeded ? 'font-semibold text-[#e53935]' : 'text-[#86868b]'}>
+                  <span className={`ml-2 ${exceeded ? 'font-semibold text-[#e53935]' : 'text-[#86868b]'}`}>
                     {formatPct(sector.value)}
                   </span>
                 </div>
                 <div className="h-7 rounded-full bg-[#f5f5f7] p-1">
                   <div
-                    className="flex h-full items-center justify-end rounded-full px-2 text-[11px] font-semibold text-white transition-all"
+                    className="h-full rounded-full transition-all"
                     style={{ width: `${width}%`, minWidth: sector.value > 0 ? 28 : 0, backgroundColor: sector.color }}
-                  >
-                    {formatPct(sector.value)}
-                  </div>
+                  />
                 </div>
               </div>
             );
@@ -242,10 +268,6 @@ function ConstraintBar({ item }) {
           <div className="text-sm font-semibold text-[#1d1d1f]">{item.name}</div>
           <div className="mt-1 text-xs text-[#86868b]">{item.note}</div>
         </div>
-        <div className={`text-right text-xs font-semibold ${exceeded ? 'text-[#e53935]' : 'text-[#b26a00]'}`}>
-          <div>{formatPct(item.value)}</div>
-          <div>{item.status}</div>
-        </div>
       </div>
 
       <div className="relative mt-4 pt-4">
@@ -259,11 +281,13 @@ function ConstraintBar({ item }) {
         </div>
         <div className="h-8 rounded-full bg-white p-1 shadow-inner">
           <div
-            className="flex h-full items-center justify-end rounded-full px-2 text-[11px] font-semibold text-white"
+            className="h-full rounded-full"
             style={{ width: `${barWidth}%`, minWidth: 34, backgroundColor: item.color }}
-          >
-            {formatPct(item.value)}
-          </div>
+          />
+        </div>
+        <div className={`mt-2 flex items-center justify-between gap-2 text-xs ${exceeded ? 'text-[#e53935]' : 'text-[#b26a00]'}`}>
+          <span className="font-semibold">{formatPct(item.value)}</span>
+          <span className="text-right font-medium">{item.status}</span>
         </div>
       </div>
     </div>

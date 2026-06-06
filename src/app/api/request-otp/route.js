@@ -23,6 +23,6 @@ export async function POST(request) {
   return Response.json({
     success: true,
     message: 'OTP sent to your Feishu — 请查看飞书消息',
-    code: otp.code,
+    ...(isDev ? { code: otp.code } : {}),
   });
 }

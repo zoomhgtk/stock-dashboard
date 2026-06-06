@@ -38,7 +38,6 @@ export default function Dashboard() {
   const [selectedName, setSelectedName] = useState('招商银行');
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [portfolioCollapsed, setPortfolioCollapsed] = useState(false);
-  const [showAmounts, setShowAmounts] = useState(true);
   const centerScrollRef = useRef(null);
   const chartRef = useRef(null);
   const portfolioRef = useRef(null);
@@ -147,8 +146,6 @@ export default function Dashboard() {
                 <PortfolioVisualization
                   collapsed={portfolioCollapsed}
                   onToggleCollapsed={() => setPortfolioCollapsed(value => !value)}
-                  showAmounts={showAmounts}
-                  onToggleAmounts={() => setShowAmounts(value => !value)}
                 />
               </div>
               <div ref={chartRef} className="relative scroll-mt-2">

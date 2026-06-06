@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 const TOTAL_CAPITAL_WAN = 35;
 const TOTAL_POSITION = 61.8;
 const CASH_POSITION = 38.2;
@@ -50,27 +52,6 @@ const constraintItems = [
 const formatPct = value => `${value.toFixed(1)}%`;
 const holdingValueWan = (TOTAL_CAPITAL_WAN * TOTAL_POSITION) / 100;
 
-function SensitiveValue({ value, showAmounts, onToggleAmounts, className = '', eyeClassName = '' }) {
-  return (
-    <span className={`inline-flex items-center gap-1.5 ${className}`}>
-      <span>{showAmounts ? value : '***'}</span>
-      <button
-        type="button"
-        onClick={onToggleAmounts}
-        className={`inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/70 text-[13px] shadow-sm ring-1 ring-black/[0.04] transition-all hover:scale-105 hover:bg-white ${eyeClassName}`}
-        aria-label={showAmounts ? '隐藏金额与比例' : '显示金额与比例'}
-        title={showAmounts ? '隐藏金额与比例' : '显示金额与比例'}
-      >
-        {showAmounts ? '👁️' : '🙈'}
-      </button>
-    </span>
-  );
-}
-
-function masked(showAmounts, value) {
-  return showAmounts ? value : '***';
-}
-
 function polarToCartesian(cx, cy, radius, angleInDegrees) {
   const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
   return {
@@ -86,16 +67,16 @@ function describeArc(cx, cy, radius, startAngle, endAngle) {
   return ['M', start.x, start.y, 'A', radius, radius, 0, largeArcFlag, 0, end.x, end.y, 'L', cx, cy, 'Z'].join(' ');
 }
 
-function OverviewCard({ label, value, subValue, accent = '#007aff', children, showAmounts, onToggleAmounts }) {
+function OverviewCard({ label, value, subValue, accent = '#007aff', children, maskAmounts = false }) {
   return (
     <div className="rounded-2xl bg-[#f5f5f7] p-4 shadow-sm ring-1 ring-black/[0.03]">
       <div className="text-xs font-medium text-[#86868b]">{label}</div>
       <div className="mt-2 text-3xl font-semibold tracking-tight text-[#1d1d1f]" style={{ color: accent }}>
-        <SensitiveValue value={value} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} />
+        {maskAmounts ? '***' : value}
       </div>
       {subValue && (
         <div className="mt-1 text-xs text-[#86868b]">
-          <SensitiveValue value={subValue} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />
+          {maskAmounts ? '***' : subValue}
         </div>
       )}
       {children}
@@ -103,7 +84,7 @@ function OverviewCard({ label, value, subValue, accent = '#007aff', children, sh
   );
 }
 
-function PieChart({ showAmounts, onToggleAmounts }) {
+function PieChart() {
   let currentAngle = 0;
   const slices = positions.map(item => {
     const startAngle = currentAngle;
@@ -121,9 +102,9 @@ function PieChart({ showAmounts, onToggleAmounts }) {
         <div>
           <h3 className="text-sm font-semibold text-[#1d1d1f]">持仓占比饼图</h3>
           <p className="mt-0.5 text-xs text-[#86868b]">
-            已跟踪仓位 <SensitiveValue value={formatPct(TOTAL_POSITION)} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />
+            已跟踪仓位 {formatPct(TOTAL_POSITION)}
             <span className="mx-1">·</span>
-            现金 <SensitiveValue value={formatPct(CASH_POSITION)} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />
+            现金 {formatPct(CASH_POSITION)}
           </p>
         </div>
       </div>
@@ -146,13 +127,13 @@ function PieChart({ showAmounts, onToggleAmounts }) {
                 className="fill-white text-[11px] font-semibold"
                 style={{ fill: slice.name === '现金' ? '#86868b' : '#ffffff' }}
               >
-                {masked(showAmounts, formatPct(slice.value))}
+                {formatPct(slice.value)}
               </text>
             </g>
           ))}
           <circle cx="110" cy="110" r="48" fill="#ffffff" />
           <text x="110" y="104" textAnchor="middle" className="fill-[#86868b] text-[12px] font-medium">总仓位</text>
-          <text x="110" y="126" textAnchor="middle" className="fill-[#1d1d1f] text-[24px] font-semibold">{masked(showAmounts, formatPct(TOTAL_POSITION))}</text>
+          <text x="110" y="126" textAnchor="middle" className="fill-[#1d1d1f] text-[24px] font-semibold">{formatPct(TOTAL_POSITION)}</text>
         </svg>
 
         <div className="mt-3 grid w-full grid-cols-2 gap-2 text-xs">
@@ -162,12 +143,7 @@ function PieChart({ showAmounts, onToggleAmounts }) {
               <div className="min-w-0">
                 <div className="truncate font-medium text-[#1d1d1f]">{item.name}</div>
                 <div className="text-[#86868b]">
-                  <SensitiveValue
-                    value={`${formatPct(item.value)}${item.trackedPct ? ` · 已持仓 ${formatPct(item.trackedPct)}` : ''}`}
-                    showAmounts={showAmounts}
-                    onToggleAmounts={onToggleAmounts}
-                    eyeClassName="h-5 w-5 text-[11px]"
-                  />
+                  {formatPct(item.value)}{item.trackedPct ? ` · 已持仓 ${formatPct(item.trackedPct)}` : ''}
                 </div>
               </div>
             </div>
@@ -178,7 +154,7 @@ function PieChart({ showAmounts, onToggleAmounts }) {
   );
 }
 
-function SectorDistribution({ showAmounts, onToggleAmounts }) {
+function SectorDistribution() {
   const maxScale = 60;
   const limitLeft = (SECTOR_LIMIT / maxScale) * 100;
 
@@ -188,9 +164,9 @@ function SectorDistribution({ showAmounts, onToggleAmounts }) {
         <div>
           <h3 className="text-sm font-semibold text-[#1d1d1f]">板块分布</h3>
           <p className="mt-0.5 text-xs text-[#86868b]">
-            板块上限 <SensitiveValue value={formatPct(SECTOR_LIMIT)} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />
+            板块上限 {formatPct(SECTOR_LIMIT)}
             <span className="mx-1">·</span>
-            合计 <SensitiveValue value={formatPct(TOTAL_POSITION)} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />
+            合计 {formatPct(TOTAL_POSITION)}
           </p>
         </div>
         <span className="rounded-full bg-[#fff2f2] px-2 py-1 text-xs font-medium text-[#e53935]">银行超限</span>
@@ -200,15 +176,13 @@ function SectorDistribution({ showAmounts, onToggleAmounts }) {
         <div className="mb-4">
           <div className="mb-2 flex items-center justify-between text-xs">
             <span className="font-medium text-[#1d1d1f]">持仓板块堆叠</span>
-            <span className="text-[#86868b]">
-              <SensitiveValue value={formatPct(TOTAL_POSITION)} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />
-            </span>
+            <span className="text-[#86868b]">{formatPct(TOTAL_POSITION)}</span>
           </div>
           <div className="flex h-4 overflow-hidden rounded-full bg-[#f2f2f7]">
             {sectors.map(sector => (
               <div
                 key={sector.name}
-                title={`${sector.name} ${masked(showAmounts, formatPct(sector.value))}`}
+                title={`${sector.name} ${formatPct(sector.value)}`}
                 style={{ width: `${sector.value}%`, backgroundColor: sector.color }}
               />
             ))}
@@ -221,7 +195,7 @@ function SectorDistribution({ showAmounts, onToggleAmounts }) {
             style={{ left: `${limitLeft}%` }}
           >
             <span className="absolute -top-5 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-1.5 text-[11px] font-medium text-[#e53935]">
-              <SensitiveValue value={formatPct(SECTOR_LIMIT)} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />上限
+              {formatPct(SECTOR_LIMIT)}上限
             </span>
           </div>
 
@@ -235,7 +209,7 @@ function SectorDistribution({ showAmounts, onToggleAmounts }) {
                     {sector.name}{exceeded ? ' 🚨' : ''}
                   </span>
                   <span className={exceeded ? 'font-semibold text-[#e53935]' : 'text-[#86868b]'}>
-                    <SensitiveValue value={formatPct(sector.value)} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />
+                    {formatPct(sector.value)}
                   </span>
                 </div>
                 <div className="h-7 rounded-full bg-[#f5f5f7] p-1">
@@ -243,7 +217,7 @@ function SectorDistribution({ showAmounts, onToggleAmounts }) {
                     className="flex h-full items-center justify-end rounded-full px-2 text-[11px] font-semibold text-white transition-all"
                     style={{ width: `${width}%`, minWidth: sector.value > 0 ? 28 : 0, backgroundColor: sector.color }}
                   >
-                    {masked(showAmounts, formatPct(sector.value))}
+                    {formatPct(sector.value)}
                   </div>
                 </div>
               </div>
@@ -255,7 +229,7 @@ function SectorDistribution({ showAmounts, onToggleAmounts }) {
   );
 }
 
-function ConstraintBar({ item, showAmounts, onToggleAmounts }) {
+function ConstraintBar({ item }) {
   const maxScale = 60;
   const barWidth = Math.min((item.value / maxScale) * 100, 100);
   const limitLeft = (item.limit / maxScale) * 100;
@@ -269,8 +243,8 @@ function ConstraintBar({ item, showAmounts, onToggleAmounts }) {
           <div className="mt-1 text-xs text-[#86868b]">{item.note}</div>
         </div>
         <div className={`text-right text-xs font-semibold ${exceeded ? 'text-[#e53935]' : 'text-[#b26a00]'}`}>
-          <div><SensitiveValue value={formatPct(item.value)} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" /></div>
-          <div>{showAmounts ? item.status : item.status.replace(/[\d.]+%/g, '***')}</div>
+          <div>{formatPct(item.value)}</div>
+          <div>{item.status}</div>
         </div>
       </div>
 
@@ -280,7 +254,7 @@ function ConstraintBar({ item, showAmounts, onToggleAmounts }) {
           style={{ left: `${limitLeft}%` }}
         >
           <span className="absolute -top-4 -translate-x-1/2 whitespace-nowrap text-[10px] font-medium text-[#e53935]">
-            <SensitiveValue value={formatPct(item.limit)} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />上限
+            {formatPct(item.limit)}上限
           </span>
         </div>
         <div className="h-8 rounded-full bg-white p-1 shadow-inner">
@@ -288,7 +262,7 @@ function ConstraintBar({ item, showAmounts, onToggleAmounts }) {
             className="flex h-full items-center justify-end rounded-full px-2 text-[11px] font-semibold text-white"
             style={{ width: `${barWidth}%`, minWidth: 34, backgroundColor: item.color }}
           >
-            {masked(showAmounts, formatPct(item.value))}
+            {formatPct(item.value)}
           </div>
         </div>
       </div>
@@ -296,7 +270,9 @@ function ConstraintBar({ item, showAmounts, onToggleAmounts }) {
   );
 }
 
-export default function PortfolioVisualization({ collapsed = false, onToggleCollapsed, showAmounts = true, onToggleAmounts }) {
+export default function PortfolioVisualization({ collapsed = false, onToggleCollapsed }) {
+  const [showAmounts, setShowAmounts] = useState(true);
+
   return (
     <section className="rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-black/[0.04] backdrop-blur transition-all duration-300" aria-label="Portfolio visualization">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -305,8 +281,17 @@ export default function PortfolioVisualization({ collapsed = false, onToggleColl
           <p className="mt-0.5 text-xs text-[#86868b]">六月持仓 · 仓位分布 · 约束风险</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="rounded-full bg-[#f5f5f7] px-3 py-1 text-xs font-medium text-[#86868b]">
-            基准资金 <SensitiveValue value={`${TOTAL_CAPITAL_WAN}万`} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} eyeClassName="h-5 w-5 text-[11px]" />
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#f5f5f7] px-3 py-1 text-xs font-medium text-[#86868b]">
+            <span>基准资金 {TOTAL_CAPITAL_WAN}万</span>
+            <button
+              type="button"
+              onClick={() => setShowAmounts(value => !value)}
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-[11px] shadow-sm ring-1 ring-black/[0.04] transition-all hover:scale-105 hover:bg-white"
+              aria-label={showAmounts ? '隐藏持仓市值金额' : '显示持仓市值金额'}
+              title={showAmounts ? '隐藏持仓市值金额' : '显示持仓市值金额'}
+            >
+              {showAmounts ? '👁️' : '🙈'}
+            </button>
           </div>
           <button
             type="button"
@@ -324,25 +309,29 @@ export default function PortfolioVisualization({ collapsed = false, onToggleColl
       <div className={`grid transition-[grid-template-rows,opacity] duration-500 ease-in-out ${collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'}`}>
         <div className="overflow-hidden">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <OverviewCard label="总仓位" value={formatPct(TOTAL_POSITION)} subValue={`剩余现金 ${formatPct(CASH_POSITION)}`} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts}>
+            <OverviewCard label="总仓位" value={formatPct(TOTAL_POSITION)} subValue={`剩余现金 ${formatPct(CASH_POSITION)}`}>
               <div className="mt-3 h-2 rounded-full bg-[#e5e5e7]">
                 <div className="h-full rounded-full bg-[#007aff] transition-all duration-500" style={{ width: `${TOTAL_POSITION}%` }} />
               </div>
             </OverviewCard>
-            <OverviewCard label="持仓市值" value={`≈${holdingValueWan.toFixed(1)}万`} subValue={`${TOTAL_CAPITAL_WAN}万基准 × ${formatPct(TOTAL_POSITION)}`} accent="#1d1d1f" showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} />
+            <OverviewCard
+              label="持仓市值"
+              value={`≈${holdingValueWan.toFixed(1)}万`}
+              subValue={`${TOTAL_CAPITAL_WAN}万基准 × ${formatPct(TOTAL_POSITION)}`}
+              accent="#1d1d1f"
+              maskAmounts={!showAmounts}
+            />
             <OverviewCard
               label="10年国债"
               value={formatPct(TREASURY_YIELD)}
               subValue={`3倍国债 = ${formatPct(TREASURY_YIELD * 3)}`}
               accent="#43a047"
-              showAmounts={showAmounts}
-              onToggleAmounts={onToggleAmounts}
             />
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <PieChart showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} />
-            <SectorDistribution showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} />
+            <PieChart />
+            <SectorDistribution />
           </div>
 
           <div className="mt-4 rounded-2xl bg-[#f5f5f7] p-4">
@@ -354,7 +343,7 @@ export default function PortfolioVisualization({ collapsed = false, onToggleColl
             </div>
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
               {constraintItems.map(item => (
-                <ConstraintBar key={item.name} item={item} showAmounts={showAmounts} onToggleAmounts={onToggleAmounts} />
+                <ConstraintBar key={item.name} item={item} />
               ))}
             </div>
           </div>
